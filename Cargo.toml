@@ -8,5 +8,9 @@ edition = "2021"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
-cosmwasm-std = "1.0.0"
-serde = "1.0.0"
+cosmwasm-std = "2.0.2"
+serde = "1.0.199"
+cw-storage-plus = "2.0.0"
+
+[dev-dependencies]
+cw-multi-test = "2.0.1"
