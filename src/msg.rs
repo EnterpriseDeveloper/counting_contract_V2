@@ -8,6 +8,12 @@ pub enum QueryMsg {
 
 #[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]
+pub enum ExecMsg {
+    Poke {},
+}
+
+#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "snake_case")]
 pub struct ValuerResp {
     pub value: u64,
 }
