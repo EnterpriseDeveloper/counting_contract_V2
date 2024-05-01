@@ -1,27 +1,25 @@
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::Coin;
-use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct InstantiateMsg {
     pub minimal_donation: Coin,
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
+#[derive(QueryResponses)]
 pub enum QueryMsg {
+    #[returns(ValuerResp)]
     Value {},
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub enum ExecMsg {
     Donate {},
     Withdraw {},
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug, PartialEq)]
-#[serde(rename_all = "snake_case")]
+#[cw_serde]
 pub struct ValuerResp {
     pub value: u64,
 }
