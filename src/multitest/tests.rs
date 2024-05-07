@@ -234,3 +234,25 @@ fn migration() {
         }
     );
 }
+
+#[test]
+fn migration_no_update() {
+    let mut app = App::default();
+
+    let owner = app.api().addr_make("owner");
+    let admin = app.api().addr_make("admin");
+
+    let code_id = CountingContract::store_code(&mut app);
+
+    let contract = CountingContract::instantiate(
+        &mut app,
+        code_id,
+        &owner,
+        Some(&admin),
+        "Counting contract",
+        Coin::new(10u128, ATOM),
+    )
+    .unwrap();
+
+    CountingContract::migrate(&mut app, &admin, contract.addr(), code_id).unwrap();
+}
