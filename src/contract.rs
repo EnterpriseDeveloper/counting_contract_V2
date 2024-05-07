@@ -1,24 +1,47 @@
-use cosmwasm_std::{DepsMut, MessageInfo, Response, StdResult};
+use cosmwasm_std::{Coin, DepsMut, MessageInfo, Response, StdResult};
+use cw_storage_plus::Item;
 
 use crate::{
     msg::InstantiateMsg,
-    state::{COUNTER, MINIMAL_DONATION, OWNER},
+    state::{State, OWNER, STATE},
 };
 
 pub fn instantiate(deps: DepsMut, info: MessageInfo, msg: InstantiateMsg) -> StdResult<Response> {
-    COUNTER.save(deps.storage, &0)?;
-    MINIMAL_DONATION.save(deps.storage, &msg.minimal_donation)?;
+    STATE.save(
+        deps.storage,
+        &State {
+            counter: 0,
+            minimal_donation: msg.minimal_donation,
+        },
+    )?;
     OWNER.save(deps.storage, &info.sender)?;
+    Ok(Response::new())
+}
+
+pub fn migrate(deps: DepsMut) -> StdResult<Response> {
+    const COUNTER: Item<u64> = Item::new("counter");
+    const MINIMAL_DONATION: Item<Coin> = Item::new("minimal_donation");
+
+    let counter = COUNTER.load(deps.storage)?;
+    let minimal_donation = MINIMAL_DONATION.load(deps.storage)?;
+    STATE.save(
+        deps.storage,
+        &State {
+            counter: counter,
+            minimal_donation: minimal_donation,
+        },
+    )?;
+
     Ok(Response::new())
 }
 
 pub mod query {
     use cosmwasm_std::{Deps, StdResult};
 
-    use crate::{msg::ValuerResp, state::COUNTER};
+    use crate::{msg::ValuerResp, state::STATE};
 
     pub fn value(deps: Deps) -> StdResult<ValuerResp> {
-        let value = COUNTER.load(deps.storage)?;
+        let value = STATE.load(deps.storage)?.counter;
         Ok(ValuerResp { value })
     }
 }
@@ -26,28 +49,27 @@ pub mod query {
 pub mod exec {
     use crate::{
         error::ContractError,
-        state::{COUNTER, MINIMAL_DONATION, OWNER},
+        state::{OWNER, STATE},
     };
     use cosmwasm_std::{BankMsg, DepsMut, Env, MessageInfo, Response, StdResult};
 
     pub fn donate(deps: DepsMut, info: MessageInfo) -> StdResult<Response> {
         // Two way of changing state in contract
         //COUNTER.update(deps.storage, |counter| -> StdResult<_> { Ok(counter + 1) })?;
-        let minimal_donation = MINIMAL_DONATION.load(deps.storage)?;
-
-        let mut value = COUNTER.load(deps.storage)?;
+        let mut state = STATE.load(deps.storage)?;
 
         if info.funds.iter().any(|coin| {
-            coin.denom == minimal_donation.denom && coin.amount >= minimal_donation.amount
+            coin.denom == state.minimal_donation.denom
+                && coin.amount >= state.minimal_donation.amount
         }) {
-            value += 1;
-            COUNTER.save(deps.storage, &value)?;
+            state.counter += 1;
+            STATE.save(deps.storage, &state)?;
         }
 
         let resp = Response::new()
             .add_attribute("action", "donate")
             .add_attribute("sender", info.sender.as_str())
-            .add_attribute("counter", value.to_string());
+            .add_attribute("counter", state.counter.to_string());
 
         Ok(resp)
     }
